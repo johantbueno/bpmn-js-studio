@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BPMN Studio Miñoso | Modelador BPMN 2.0 con IA - Casos DGII</title>
+  <title>BPMN Studio Miñoso | Suite Profesional de Procesos BPMN 2.0</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'/></svg>">
 </head>
 <body>
@@ -22,10 +22,16 @@
         <div>
           <div style="display: flex; align-items: center; gap: 8px;">
             <span class="brand-title">BPMN Studio Miñoso</span>
-            <span class="brand-badge">DGII & IA v1.1</span>
+            <span class="brand-badge">DGII & IA v2.0 Enterprise</span>
           </div>
-          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: -2px;">Modelado, Auditoría y Dashboard BPMN 2.0 | Prof. Johan Tapia, PhD</p>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: -2px;">Modelado, Simulación, RACI y Auditoría BPMN 2.0 | Prof. Johan Tapia, PhD</p>
         </div>
+      </div>
+
+      <!-- Buscador de Elementos -->
+      <div class="search-wrapper">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+        <input type="text" id="input-search-node" placeholder="Buscar tarea o nodo..." class="search-input">
       </div>
 
       <!-- Grupos de Herramientas -->
@@ -44,7 +50,7 @@
 
         <!-- Selector de Ejemplos DGII -->
         <div class="dropdown-wrapper">
-          <select id="select-dgii" class="select-dropdown" title="Cargar casos de ejemplo para la DGII de República Dominicana (Nelson Miñoso)">
+          <select id="select-dgii" class="select-dropdown" title="Cargar casos oficiales DGII (Nelson Miñoso)">
             <option value="" disabled selected>📂 Casos DGII (Nelson Miñoso)...</option>
             <option value="dgii-cert">1. Certificación de Cumplimiento (Nelson Miñoso)</option>
             <option value="dgii-ecf">2. Facturación Electrónica e-CF (Nelson Miñoso)</option>
@@ -56,12 +62,12 @@
         <div class="divider"></div>
 
         <!-- Exportaciones -->
-        <button id="btn-export-xml" class="btn" title="Descargar diagrama en archivo BPMN 2.0 XML">
+        <button id="btn-export-xml" class="btn" title="Descargar BPMN 2.0 XML">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
           BPMN
         </button>
 
-        <button id="btn-export-svg" class="btn" title="Exportar diagrama como imagen vectorial SVG">
+        <button id="btn-export-svg" class="btn" title="Exportar imagen SVG">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
           SVG
         </button>
@@ -78,24 +84,44 @@
 
         <div class="divider"></div>
 
-        <!-- Suite de Inteligencia Artificial & Dashboard -->
-        <button id="btn-dashboard" class="btn btn-dashboard" title="Abrir Dashboard de Control y Métricas de Procesos DGII">
+        <!-- Herramientas Profesionales de BPM -->
+        <button id="btn-simular" class="btn btn-simulate" title="Simular ejecución visual de tokens en el diagrama">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Simular
+        </button>
+
+        <button id="btn-raci" class="btn" title="Generar Matriz RACI del proceso">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Matriz RACI
+        </button>
+
+        <button id="btn-ishikawa" class="btn" title="Analizador de Causa Raíz (Ishikawa & 5 Porqués)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>
+          Causa Raíz
+        </button>
+
+        <button id="btn-quickwins" class="btn" title="Matriz 2x2 Impacto vs Esfuerzo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 12h18"/><path d="M12 3v18"/></svg>
+          Quick Wins (2x2)
+        </button>
+
+        <button id="btn-dashboard" class="btn btn-dashboard" title="Dashboard Ejecutivo DGII (Nelson Miñoso)">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
           Dashboard
         </button>
 
-        <button id="btn-ai-gen" class="btn btn-ai" title="Generar diagrama con IA a partir de lenguaje natural">
+        <button id="btn-ai-gen" class="btn btn-ai" title="Generar con IA">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
           Generar IA
         </button>
 
-        <button id="btn-ai-audit" class="btn btn-audit" title="Auditar calidad del diagrama BPMN (Reglas Unidades II y III de BPM)">
+        <button id="btn-ai-audit" class="btn btn-audit" title="Auditoría BPMN 2.0">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11 3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
           Auditoría
         </button>
 
-        <button id="btn-ai-doc" class="btn" title="Generar manual y ficha técnica de procedimiento">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+        <button id="btn-ai-doc" class="btn" title="Ficha Técnica y Manual">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
           Manual
         </button>
       </div>
@@ -104,6 +130,21 @@
     <!-- Contenedor del Lienzo -->
     <main class="canvas-wrapper">
       <div id="canvas"></div>
+
+      <!-- Barra Flotante de Simulación de Tokens -->
+      <div id="sim-control-bar" class="sim-control-bar">
+        <div class="sim-title">
+          <span class="sim-pulse"></span>
+          <span>Simulador de Proceso (Token Run)</span>
+        </div>
+        <div class="sim-actions">
+          <button id="btn-sim-play" class="btn btn-sm btn-primary">▶ Iniciar</button>
+          <button id="btn-sim-pause" class="btn btn-sm" disabled>⏸ Pausar</button>
+          <button id="btn-sim-step" class="btn btn-sm" title="Avanzar manualmente un paso">⏭ Paso</button>
+          <button id="btn-sim-stop" class="btn btn-sm" title="Detener simulación">⏹ Detener</button>
+        </div>
+        <div id="sim-log-text" class="sim-log">Listo para simular ejecución de proceso...</div>
+      </div>
 
       <!-- Overlay Drag & Drop -->
       <div id="drag-overlay" class="drag-overlay">
@@ -155,7 +196,7 @@
       </div>
     </footer>
 
-    <!-- Modal: Dashboard de Control y Métricas DGII -->
+    <!-- MODAL 1: Dashboard de Control y Métricas DGII -->
     <div id="modal-dashboard" class="modal-backdrop">
       <div class="modal-box modal-xl">
         <div class="modal-header">
@@ -169,7 +210,6 @@
           <button class="btn-close" id="btn-close-dashboard">&times;</button>
         </div>
 
-        <!-- Pestañas del Dashboard -->
         <div class="dashboard-tabs">
           <button class="tab-btn active" data-tab="tab-kpis">📈 Vista Ejecutiva (KPIs & Métricas)</button>
           <button class="tab-btn" data-tab="tab-expedientes">📋 Expedientes (Nelson Miñoso)</button>
@@ -179,7 +219,6 @@
         <div class="modal-body" style="padding: 16px 22px;">
           <!-- Pestaña 1: Vista Ejecutiva -->
           <div id="tab-kpis" class="tab-content active">
-            <!-- Nivel 1: Fila Superior de Tarjetas KPI (Regla 3-30-300 / Patrón F) -->
             <div class="kpi-grid">
               <div class="kpi-card">
                 <div class="kpi-title">Lead Time Promedio</div>
@@ -208,13 +247,11 @@
               </div>
             </div>
 
-            <!-- Nivel 2: Capa Analítica y Distribuciones -->
             <div class="analytics-grid">
-              <!-- Gráfico de Embudo / Estados -->
               <div class="chart-box">
                 <div class="chart-header">
                   <span class="chart-title">Distribución de Trámites por Estado</span>
-                  <button id="btn-simulate-cases" class="btn btn-sm" title="Simular 20 nuevos expedientes con motor de procesos">⚡ Simular +20 Casos</button>
+                  <button id="btn-simulate-cases" class="btn btn-sm" title="Simular 20 nuevos expedientes">⚡ Simular +20 Casos</button>
                 </div>
                 <div class="status-bars-container">
                   <div class="status-bar-row">
@@ -235,7 +272,6 @@
                 </div>
               </div>
 
-              <!-- Cuellos de Botella por Actividad -->
               <div class="chart-box">
                 <div class="chart-header">
                   <span class="chart-title">Cuellos de Botella por Actividad (Horas Promedio)</span>
@@ -286,9 +322,7 @@
                     <th>SLA</th>
                   </tr>
                 </thead>
-                <tbody id="table-expedientes-body">
-                  <!-- Inyectado dinámicamente -->
-                </tbody>
+                <tbody id="table-expedientes-body"></tbody>
               </table>
             </div>
           </div>
@@ -311,7 +345,104 @@
       </div>
     </div>
 
-    <!-- Modal: Generador con IA -->
+    <!-- MODAL 2: Matriz RACI Automática -->
+    <div id="modal-raci" class="modal-backdrop">
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 1.2rem;">🎯</span>
+            <div>
+              <span style="font-weight: 700; font-size: 1.05rem;">Matriz RACI del Proceso</span>
+              <div style="font-size: 0.72rem; color: var(--text-muted);">Responsible (R) · Accountable (A) · Consulted (C) · Informed (I)</div>
+            </div>
+          </div>
+          <button class="btn-close" id="btn-close-raci">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+            <table class="data-table" id="table-raci">
+              <thead id="raci-thead"></thead>
+              <tbody id="raci-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" id="btn-export-raci-csv">📥 Exportar CSV</button>
+          <button class="btn btn-primary" id="btn-close-raci-btn">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 3: Analizador de Causa Raíz (Ishikawa & 5 Porqués) -->
+    <div id="modal-ishikawa" class="modal-backdrop">
+      <div class="modal-box modal-xl">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">🐟</span>
+            <div>
+              <span style="font-weight: 800; font-size: 1.1rem;">Análisis de Causa Raíz (Ishikawa & 5 Porqués)</span>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Metodología DMAIC (Unidad III) para Diagnóstico en Trámites DGII</div>
+            </div>
+          </div>
+          <button class="btn-close" id="btn-close-ishikawa">&times;</button>
+        </div>
+        <div class="modal-body" style="padding: 16px 20px;">
+          <div class="ishikawa-problem-banner">
+            <strong>Problema Focal:</strong> Demora en la tramitación y entrega de Certificaciones Tributarias a Nelson Miñoso
+          </div>
+
+          <h4 style="font-size: 0.88rem; margin: 14px 0 8px 0; color: #1e293b;">1. Las 6 Dimensiones de Ishikawa (Espina de Pescado):</h4>
+          <div class="ishikawa-grid" id="ishikawa-cards-container"></div>
+
+          <h4 style="font-size: 0.88rem; margin: 20px 0 8px 0; color: #1e293b;">2. Técnica de los 5 Porqués (Desmontando Síntomas vs Causa Raíz):</h4>
+          <div class="whys-timeline" id="whys-container"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="btn-close-ishikawa-btn">Entendido</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 4: Matriz 2x2 Impacto vs Esfuerzo (Quick Wins) -->
+    <div id="modal-quickwins" class="modal-backdrop">
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span style="font-size: 1.2rem;">⚡</span>
+            <div>
+              <span style="font-weight: 800; font-size: 1.1rem;">Matriz de Priorización: Impacto vs. Esfuerzo</span>
+              <div style="font-size: 0.74rem; color: var(--text-muted);">Herramienta de la Unidad III para identificar Quick Wins en procesos DGII</div>
+            </div>
+          </div>
+          <button class="btn-close" id="btn-close-quickwins">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="matrix-2x2">
+            <div class="matrix-quadrant quad-qw">
+              <div class="quad-header">🟢 QUICK WINS (Alto Impacto / Bajo Esfuerzo)</div>
+              <div class="quad-list" id="quad-qw-list"></div>
+            </div>
+            <div class="matrix-quadrant quad-est">
+              <div class="quad-header">🟡 PROYECTOS ESTRATÉGICOS (Alto Impacto / Alto Esfuerzo)</div>
+              <div class="quad-list" id="quad-est-list"></div>
+            </div>
+            <div class="matrix-quadrant quad-menor">
+              <div class="quad-header">🔵 TAREAS RÁPIDAS (Bajo Impacto / Bajo Esfuerzo)</div>
+              <div class="quad-list" id="quad-menor-list"></div>
+            </div>
+            <div class="matrix-quadrant quad-des">
+              <div class="quad-header">🔴 DESCARTAR (Bajo Impacto / Alto Esfuerzo)</div>
+              <div class="quad-list" id="quad-des-list"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-primary" id="btn-close-quickwins-btn">Cerrar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL 5: Generador con IA -->
     <div id="modal-ai-gen" class="modal-backdrop">
       <div class="modal-box">
         <div class="modal-header">
@@ -353,12 +484,12 @@
       </div>
     </div>
 
-    <!-- Modal: Manual de Proceso / Documentación -->
+    <!-- MODAL 6: Manual de Proceso / Documentación -->
     <div id="modal-docs" class="modal-backdrop">
       <div class="modal-box modal-lg">
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
             <span style="font-weight: 700; font-size: 1.1rem;">Manual y Ficha Técnica de Proceso</span>
           </div>
           <button class="btn-close" id="btn-close-docs">&times;</button>

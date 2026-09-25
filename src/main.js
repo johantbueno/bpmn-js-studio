@@ -17,6 +17,11 @@ import {
   exportarDatosCSV 
 } from './dashboard.js';
 
+import { ProcessSimulator } from './token-simulator.js';
+import { generarMatrizRACI, exportarRACICSV } from './raci-matrix.js';
+import { ISHIKAWA_CASO_DGII } from './ishikawa-five-whys.js';
+import { INICIATIVAS_MEJORA_DGII } from './impact-effort-matrix.js';
+
 // Inicializar el modelador de BPMN
 const canvasElement = document.getElementById('canvas');
 const modeler = new BpmnModeler({
@@ -26,7 +31,7 @@ const modeler = new BpmnModeler({
   }
 });
 
-// Elementos de la UI
+// UI Elements: Barra Superior
 const btnNew = document.getElementById('btn-new');
 const btnOpen = document.getElementById('btn-open');
 const fileInput = document.getElementById('file-input');
@@ -41,12 +46,38 @@ const btnZoomOut = document.getElementById('btn-zoom-out');
 const btnZoomFit = document.getElementById('btn-zoom-fit');
 const btnZoomReset = document.getElementById('btn-zoom-reset');
 
-const btnDashboard = document.getElementById('btn-dashboard');
-const btnAiGen = document.getElementById('btn-ai-gen');
-const btnAiAudit = document.getElementById('btn-ai-audit');
-const btnAiDoc = document.getElementById('btn-ai-doc');
+const inputSearchNode = document.getElementById('input-search-node');
 
-// Modales y drawers
+// Herramientas Pro & Modales
+const btnSimular = document.getElementById('btn-simular');
+const simControlBar = document.getElementById('sim-control-bar');
+const btnSimPlay = document.getElementById('btn-sim-play');
+const btnSimPause = document.getElementById('btn-sim-pause');
+const btnSimStep = document.getElementById('btn-sim-step');
+const btnSimStop = document.getElementById('btn-sim-stop');
+const simLogText = document.getElementById('sim-log-text');
+
+const btnRaci = document.getElementById('btn-raci');
+const modalRaci = document.getElementById('modal-raci');
+const btnCloseRaci = document.getElementById('btn-close-raci');
+const btnCloseRaciBtn = document.getElementById('btn-close-raci-btn');
+const raciThead = document.getElementById('raci-thead');
+const raciTbody = document.getElementById('raci-tbody');
+const btnExportRaciCsv = document.getElementById('btn-export-raci-csv');
+
+const btnIshikawa = document.getElementById('btn-ishikawa');
+const modalIshikawa = document.getElementById('modal-ishikawa');
+const btnCloseIshikawa = document.getElementById('btn-close-ishikawa');
+const btnCloseIshikawaBtn = document.getElementById('btn-close-ishikawa-btn');
+const ishikawaCardsContainer = document.getElementById('ishikawa-cards-container');
+const whysContainer = document.getElementById('whys-container');
+
+const btnQuickwins = document.getElementById('btn-quickwins');
+const modalQuickwins = document.getElementById('modal-quickwins');
+const btnCloseQuickwins = document.getElementById('btn-close-quickwins');
+const btnCloseQuickwinsBtn = document.getElementById('btn-close-quickwins-btn');
+
+const btnDashboard = document.getElementById('btn-dashboard');
 const modalDashboard = document.getElementById('modal-dashboard');
 const btnCloseDashboard = document.getElementById('btn-close-dashboard');
 const btnFooterCloseDashboard = document.getElementById('btn-footer-close-dashboard');
@@ -56,6 +87,7 @@ const btnCopyAppscript = document.getElementById('btn-copy-appscript');
 const btnExportCsv = document.getElementById('btn-export-csv');
 const btnSimulateCases = document.getElementById('btn-simulate-cases');
 
+const btnAiGen = document.getElementById('btn-ai-gen');
 const modalAiGen = document.getElementById('modal-ai-gen');
 const btnCloseAi = document.getElementById('btn-close-ai');
 const btnCancelAi = document.getElementById('btn-cancel-ai');
@@ -63,10 +95,12 @@ const btnSubmitAi = document.getElementById('btn-submit-ai');
 const aiPromptInput = document.getElementById('ai-prompt-input');
 const geminiApiKey = document.getElementById('gemini-api-key');
 
+const btnAiAudit = document.getElementById('btn-ai-audit');
 const auditDrawer = document.getElementById('audit-drawer');
 const btnCloseAudit = document.getElementById('btn-close-audit');
 const auditContent = document.getElementById('audit-content');
 
+const btnAiDoc = document.getElementById('btn-ai-doc');
 const modalDocs = document.getElementById('modal-docs');
 const btnCloseDocs = document.getElementById('btn-close-docs');
 const docsContent = document.getElementById('docs-content');
@@ -79,12 +113,26 @@ const statusText = document.getElementById('status-text');
 const toastContainer = document.getElementById('toast-container');
 
 let expedientesActuales = [...EXPEDIENTES_DGII_NELSON];
+let raciDataCache = null;
+
+// Instancia de Simulador de Procesos
+const simulator = new ProcessSimulator(
+  modeler,
+  (msg) => {
+    simLogText.textContent = msg;
+  },
+  (isRunning) => {
+    btnSimPlay.disabled = isRunning;
+    btnSimPause.disabled = !isRunning;
+  }
+);
 
 /**
  * Función para importar XML en el lienzo
  */
 async function cargarDiagrama(xml, ajustarVista = true) {
   try {
+    simulator.detener();
     await modeler.importXML(xml);
     if (ajustarVista) {
       const canvas = modeler.get('canvas');
@@ -128,9 +176,28 @@ function actualizarEstado() {
 // Cargar diagrama por defecto inicial
 cargarDiagrama(dgiiCertificacionXML);
 
-// Eventos de cambios en el modelo
 modeler.on('commandStack.changed', () => {
   actualizarEstado();
+});
+
+// Buscador de nodos en el lienzo
+inputSearchNode.addEventListener('input', (e) => {
+  const query = e.target.value.trim().toLowerCase();
+  if (!query) return;
+
+  const elementRegistry = modeler.get('elementRegistry');
+  const matches = elementRegistry.filter(el => {
+    const name = el.businessObject?.name || '';
+    return name.toLowerCase().includes(query);
+  });
+
+  if (matches.length > 0) {
+    const target = matches[0];
+    const canvas = modeler.get('canvas');
+    canvas.scrollToElement(target);
+    canvas.addMarker(target.id, 'highlight-active');
+    setTimeout(() => canvas.removeMarker(target.id, 'highlight-active'), 1800);
+  }
 });
 
 // Botón Nuevo
@@ -181,7 +248,7 @@ btnExportXml.addEventListener('click', async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `proceso-dgii-${Date.now()}.bpmn`;
+    link.download = `proceso-dgii-minoso-${Date.now()}.bpmn`;
     link.click();
     URL.revokeObjectURL(url);
     showToast('Archivo BPMN (XML) descargado correctamente', 'success');
@@ -198,7 +265,7 @@ btnExportSvg.addEventListener('click', async () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `diagrama-dgii-${Date.now()}.svg`;
+    link.download = `diagrama-dgii-minoso-${Date.now()}.svg`;
     link.click();
     URL.revokeObjectURL(url);
     showToast('Imagen SVG exportada correctamente', 'success');
@@ -261,7 +328,138 @@ dragOverlay.addEventListener('drop', (e) => {
 });
 
 // ========================================================
-// SISTEMA DE DASHBOARD EJECUTIVO (DGII & NELSON MIÑOSO)
+// 1. SIMULADOR VISUAL DE PROCESOS (TOKEN RUN)
+// ========================================================
+btnSimular.addEventListener('click', () => {
+  simControlBar.classList.toggle('active');
+  if (simControlBar.classList.contains('active')) {
+    simulator.iniciarSimulacion();
+  } else {
+    simulator.detener();
+  }
+});
+
+btnSimPlay.addEventListener('click', () => simulator.reanudar());
+btnSimPause.addEventListener('click', () => simulator.pausar());
+btnSimStep.addEventListener('click', () => simulator.avanzarPaso());
+btnSimStop.addEventListener('click', () => {
+  simulator.detener();
+  simControlBar.classList.remove('active');
+  showToast('Simulación detenida', 'info');
+});
+
+// ========================================================
+// 2. MATRIZ RACI AUTOMÁTICA
+// ========================================================
+btnRaci.addEventListener('click', () => {
+  raciDataCache = generarMatrizRACI(modeler);
+  renderizarMatrizRACI(raciDataCache);
+  modalRaci.classList.add('open');
+});
+
+btnCloseRaci.addEventListener('click', () => modalRaci.classList.remove('open'));
+btnCloseRaciBtn.addEventListener('click', () => modalRaci.classList.remove('open'));
+
+function renderizarMatrizRACI(data) {
+  raciThead.innerHTML = `
+    <tr>
+      <th>Actividad / Tarea del Proceso</th>
+      ${data.roles.map(r => `<th style="text-align: center;">${r.nombre}</th>`).join('')}
+    </tr>
+  `;
+
+  raciTbody.innerHTML = data.matriz.map(m => `
+    <tr>
+      <td><strong>${m.tarea}</strong></td>
+      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.solicitante.toLowerCase()}">${m.asignaciones.solicitante}</span></td>
+      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.analista.toLowerCase()}">${m.asignaciones.analista}</span></td>
+      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.owner.toLowerCase()}">${m.asignaciones.owner}</span></td>
+      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.ti.toLowerCase()}">${m.asignaciones.ti}</span></td>
+    </tr>
+  `).join('');
+}
+
+btnExportRaciCsv.addEventListener('click', () => {
+  if (raciDataCache) {
+    exportarRACICSV(raciDataCache);
+    showToast('Matriz RACI exportada en formato CSV', 'success');
+  }
+});
+
+// ========================================================
+// 3. CAUSA RAÍZ (ISHIKAWA & 5 PORQUÉS)
+// ========================================================
+btnIshikawa.addEventListener('click', () => {
+  renderizarIshikawa();
+  modalIshikawa.classList.add('open');
+});
+
+btnCloseIshikawa.addEventListener('click', () => modalIshikawa.classList.remove('open'));
+btnCloseIshikawaBtn.addEventListener('click', () => modalIshikawa.classList.remove('open'));
+
+function renderizarIshikawa() {
+  ishikawaCardsContainer.innerHTML = ISHIKAWA_CASO_DGII.categorias.map(cat => `
+    <div class="ishikawa-card">
+      <div class="ishikawa-card-title">
+        <span>${cat.icono}</span>
+        <span>${cat.nombre}</span>
+      </div>
+      <ul class="ishikawa-list">
+        ${cat.causas.map(c => `<li>${c}</li>`).join('')}
+      </ul>
+    </div>
+  `).join('');
+
+  whysContainer.innerHTML = ISHIKAWA_CASO_DGII.cincoPorques.map((why, idx) => `
+    <div class="why-row ${idx === 4 ? 'why-root' : ''}">
+      <span class="why-badge">Por qué #${why.nivel}</span>
+      <div class="why-content">
+        <div><strong>Pregunta:</strong> ${why.pregunta}</div>
+        <div style="color: #334155; margin-top: 2px;"><strong>Respuesta:</strong> ${why.respuesta}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ========================================================
+// 4. MATRIZ 2x2 IMPACTO VS ESFUERZO (QUICK WINS)
+// ========================================================
+btnQuickwins.addEventListener('click', () => {
+  renderizarQuickWins();
+  modalQuickwins.classList.add('open');
+});
+
+btnCloseQuickwins.addEventListener('click', () => modalQuickwins.classList.remove('open'));
+btnCloseQuickwinsBtn.addEventListener('click', () => modalQuickwins.classList.remove('open'));
+
+function renderizarQuickWins() {
+  const qwEl = document.getElementById('quad-qw-list');
+  const estEl = document.getElementById('quad-est-list');
+  const menorEl = document.getElementById('quad-menor-list');
+  const desEl = document.getElementById('quad-des-list');
+
+  qwEl.innerHTML = '';
+  estEl.innerHTML = '';
+  menorEl.innerHTML = '';
+  desEl.innerHTML = '';
+
+  INICIATIVAS_MEJORA_DGII.forEach(item => {
+    const card = `
+      <div class="iniciativa-card">
+        <div class="iniciativa-title">${item.titulo}</div>
+        <div style="color: #64748b; font-size: 0.72rem;">${item.descripcion}</div>
+      </div>
+    `;
+
+    if (item.cuadrante === 'quick-win') qwEl.innerHTML += card;
+    else if (item.cuadrante === 'estrategico') estEl.innerHTML += card;
+    else if (item.cuadrante === 'menor') menorEl.innerHTML += card;
+    else if (item.cuadrante === 'descartar') desEl.innerHTML += card;
+  });
+}
+
+// ========================================================
+// 5. DASHBOARD EJECUTIVO & GOOGLE APPS SCRIPT
 // ========================================================
 function renderizarTablaExpedientes() {
   tableExpedientesBody.innerHTML = expedientesActuales.map(exp => `
@@ -292,7 +490,6 @@ btnDashboard.addEventListener('click', () => {
 btnCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
 btnFooterCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
 
-// Manejo de pestañas del dashboard
 document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(b => b.classList.remove('active'));
@@ -304,13 +501,11 @@ document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(btn => {
   });
 });
 
-// Exportar CSV
 btnExportCsv.addEventListener('click', () => {
   exportarDatosCSV(expedientesActuales);
   showToast('Archivo CSV generado y descargado', 'success');
 });
 
-// Copiar código Apps Script
 btnCopyAppscript.addEventListener('click', async () => {
   try {
     await navigator.clipboard.writeText(appscriptCodeEl.textContent);
@@ -320,7 +515,6 @@ btnCopyAppscript.addEventListener('click', async () => {
   }
 });
 
-// Simulación de casos
 btnSimulateCases.addEventListener('click', () => {
   const tramites = [
     "Certificación de Cumplimiento Tributario",
@@ -358,7 +552,7 @@ btnSimulateCases.addEventListener('click', () => {
 });
 
 // ========================================================
-// SUITE DE INTELIGENCIA ARTIFICIAL & AUDITORÍA
+// 6. SUITE DE IA & AUDITORÍA
 // ========================================================
 btnAiGen.addEventListener('click', () => {
   modalAiGen.classList.add('open');
@@ -399,7 +593,6 @@ btnSubmitAi.addEventListener('click', async () => {
   }
 });
 
-// Auditoría BPMN 2.0
 btnAiAudit.addEventListener('click', () => {
   const resultado = auditarDiagramaBPMN(modeler);
   renderizarAuditoria(resultado);
@@ -473,7 +666,6 @@ function renderizarAuditoria(res) {
   auditContent.innerHTML = html;
 }
 
-// Modal Manual / Documentación
 btnAiDoc.addEventListener('click', () => {
   const docMarkdown = generarDocumentacionProceso(modeler);
   docsContent.textContent = docMarkdown;
