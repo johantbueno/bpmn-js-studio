@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BPMN Studio Pro | Modelador BPMN 2.0 con IA - Casos DGII</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%232563eb'><path d='M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z'/></svg>">
+</head>
+<body>
+  <div id="app">
+    <!-- Barra Superior / Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+          </svg>
+        </div>
+        <div>
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="brand-title">BPMN Studio Pro</span>
+            <span class="brand-badge">DGII & IA v1.0</span>
+          </div>
+          <p style="font-size: 0.72rem; color: var(--text-muted); margin-top: -2px;">Modelado y Auditoría BPMN 2.0 | Prof. Johan Tapia, PhD</p>
+        </div>
+      </div>
+
+      <!-- Grupos de Herramientas -->
+      <div class="toolbar-group">
+        <!-- Archivos -->
+        <button id="btn-new" class="btn" title="Crear nuevo diagrama en blanco">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+          Nuevo
+        </button>
+
+        <button id="btn-open" class="btn" title="Abrir archivo .bpmn o .xml local">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5-5 5 5M12 5v12"/></svg>
+          Abrir
+        </button>
+        <input type="file" id="file-input" accept=".bpmn,.xml" style="display: none;">
+
+        <!-- Selector de Ejemplos DGII -->
+        <div class="dropdown-wrapper">
+          <select id="select-dgii" class="select-dropdown" title="Cargar casos de ejemplo para la DGII de República Dominicana (Nelson Miñoso)">
+            <option value="" disabled selected>📂 Casos DGII (Nelson Miñoso)...</option>
+            <option value="dgii-cert">1. Certificación de Cumplimiento (Nelson Miñoso)</option>
+            <option value="dgii-ecf">2. Facturación Electrónica e-CF (Nelson Miñoso)</option>
+            <option value="dgii-rec">3. Rectificativa Declaración Jurada (Nelson Miñoso)</option>
+            <option value="starter">4. Diagrama Inicial Estándar</option>
+          </select>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Exportaciones -->
+        <button id="btn-export-xml" class="btn" title="Descargar diagrama en archivo BPMN 2.0 XML">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          BPMN (XML)
+        </button>
+
+        <button id="btn-export-svg" class="btn" title="Exportar diagrama como imagen vectorial SVG">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+          Imagen SVG
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Historial Undo / Redo -->
+        <button id="btn-undo" class="btn btn-icon" title="Deshacer (Ctrl+Z)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v6h6M3 13a9 9 0 0 1 15.36-6.36L21 9"/></svg>
+        </button>
+        <button id="btn-redo" class="btn btn-icon" title="Rehacer (Ctrl+Y)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 7v6h-6M21 13a9 9 0 0 0-15.36-6.36L3 9"/></svg>
+        </button>
+
+        <div class="divider"></div>
+
+        <!-- Suite de Inteligencia Artificial -->
+        <button id="btn-ai-gen" class="btn btn-ai" title="Generar diagrama con IA a partir de lenguaje natural">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Generar con IA
+        </button>
+
+        <button id="btn-ai-audit" class="btn btn-audit" title="Auditar calidad del diagrama BPMN (Reglas Unidades II y III de BPM)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 11 3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+          Auditoría BPMN
+        </button>
+
+        <button id="btn-ai-doc" class="btn" title="Generar manual y ficha técnica de procedimiento">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          Manual
+        </button>
+      </div>
+    </header>
+
+    <!-- Contenedor del Lienzo -->
+    <main class="canvas-wrapper">
+      <div id="canvas"></div>
+
+      <!-- Overlay Drag & Drop -->
+      <div id="drag-overlay" class="drag-overlay">
+        <div class="drag-card">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <p>Suelta tu archivo .bpmn o .xml aquí para cargarlo</p>
+        </div>
+      </div>
+
+      <!-- Barra Flotante de Zoom -->
+      <div class="floating-zoom">
+        <button id="btn-zoom-in" title="Acercar (+)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button id="btn-zoom-out" title="Alejar (-)">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+        </button>
+        <button id="btn-zoom-fit" title="Ajustar a toda la pantalla">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="15 3 21 3 21 9"/><polyline points="9 21 3 21 3 15"/><line x1="21" y1="3" x2="14" y2="10"/><line x1="3" y1="21" x2="10" y2="14"/></svg>
+        </button>
+        <button id="btn-zoom-reset" title="Zoom original 100%">100%</button>
+      </div>
+
+      <!-- Drawer Lateral de Auditoría BPMN -->
+      <aside id="audit-drawer" class="audit-drawer">
+        <div class="drawer-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-weight: 700; font-size: 1rem; color: #1e293b;">Auditoría de Calidad BPMN 2.0</span>
+          </div>
+          <button id="btn-close-audit" class="btn-close">&times;</button>
+        </div>
+        <div class="drawer-body" id="audit-content">
+          <!-- Inyectado dinámicamente -->
+        </div>
+      </aside>
+    </main>
+
+    <!-- Barra de Estado Inferior -->
+    <footer class="status-bar">
+      <div class="status-left">
+        <div><span class="status-indicator"></span><span id="status-text">Listo para modelar</span></div>
+        <div id="status-elements">0 elementos</div>
+      </div>
+      <div class="status-right">
+        <span>Atajos: <span class="kbd">Ctrl + Z</span> Deshacer | <span class="kbd">Ctrl + Y</span> Rehacer | <span class="kbd">Espacio + Arrastrar</span> Mover lienzo</span>
+      </div>
+    </footer>
+
+    <!-- Modal: Generador con IA -->
+    <div id="modal-ai-gen" class="modal-backdrop">
+      <div class="modal-box">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span class="ai-sparkle">✨</span>
+            <span style="font-weight: 700; font-size: 1.1rem;">Generador de Procesos BPMN con IA</span>
+          </div>
+          <button class="btn-close" id="btn-close-ai">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 12px;">
+            Describe en lenguaje natural el proceso que deseas construir. El motor sintetizará la secuencia de tareas, compuertas lógicas y participantes en formato BPMN 2.0 estándar.
+          </p>
+
+          <label style="font-size: 0.82rem; font-weight: 600; display: block; margin-bottom: 4px;">Descripción del Proceso:</label>
+          <textarea id="ai-prompt-input" rows="4" class="form-textarea" placeholder="Ejemplo: Nelson Miñoso solicita prórroga de pago de ITBIS ante la DGII. El área de recaudación verifica su historial crediticio y decide si concede 30 días de plazo o emite intimación de pago..."></textarea>
+
+          <div class="prompt-chips">
+            <span style="font-size: 0.78rem; color: var(--text-muted);">Sugerencias rápidas:</span>
+            <button class="chip" data-prompt="Nelson Miñoso solicita emisión de tarjeta de crédito corporativa. El analista evalúa su historial crediticio en buró. Si califica se emite el plástico y se entrega al cliente; si no califica se notifica el rechazo formal.">Tarjeta Corporativa</button>
+            <button class="chip" data-prompt="DGII recibe denuncia tributaria contra contribuyente no registrado. El fiscalizador analiza evidencias en compras 606. Si hay mérito inicia auditoría in situ; si no archiva el caso.">Auditoría Fiscal DGII</button>
+            <button class="chip" data-prompt="Nelson Miñoso requiere levantamiento de oposición de vehículo de motor en DGII. Paga los impuestos de ley, deposita la carta de saldo original y el oficial emite el oficio de desbloqueo.">Oposición de Vehículo DGII</button>
+          </div>
+
+          <details style="margin-top: 14px; font-size: 0.8rem; color: var(--text-muted);">
+            <summary style="cursor: pointer; font-weight: 500;">Opciones avanzadas: Conexión Gemini API (Opcional)</summary>
+            <div style="margin-top: 8px;">
+              <input type="password" id="gemini-api-key" class="form-input" placeholder="Ingresa tu Google Gemini API Key (Opcional)">
+              <small style="color: #64748b;">Si se deja vacío, el sistema utilizará el motor de síntesis contextual local sin gastar tokens externos.</small>
+            </div>
+          </details>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" id="btn-cancel-ai">Cancelar</button>
+          <button class="btn btn-primary" id="btn-submit-ai">
+            <span>✨ Generar Diagrama</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: Manual de Proceso / Documentación -->
+    <div id="modal-docs" class="modal-backdrop">
+      <div class="modal-box modal-lg">
+        <div class="modal-header">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            <span style="font-weight: 700; font-size: 1.1rem;">Manual y Ficha Técnica de Proceso</span>
+          </div>
+          <button class="btn-close" id="btn-close-docs">&times;</button>
+        </div>
+        <div class="modal-body">
+          <pre id="docs-content" class="docs-preview"></pre>
+        </div>
+        <div class="modal-footer">
+          <button class="btn" id="btn-copy-docs">📋 Copiar Markdown</button>
+          <button class="btn btn-primary" id="btn-print-docs">🖨️ Imprimir / Guardar PDF</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contenedor de Toasts -->
+    <div id="toast-container" class="toast-container"></div>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

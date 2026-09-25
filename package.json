@@ -1,0 +1,29 @@
+{
+  "name": "bpmn-js-studio",
+  "version": "1.0.0",
+  "description": "Estudio web interactivo para modelar, editar y exportar diagramas BPMN 2.0 con bpmn-js y Vite",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "keywords": [
+    "bpmn",
+    "bpmn-js",
+    "bpmn2",
+    "diagram",
+    "workflow",
+    "modeler",
+    "vite"
+  ],
+  "author": "Johan Manuel Tapia <johantbueno@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "bpmn-js": "^18.30.1"
+  },
+  "devDependencies": {
+    "vite": "^5.4.14"
+  }
+}
