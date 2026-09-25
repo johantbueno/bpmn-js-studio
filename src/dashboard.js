@@ -136,7 +136,7 @@ function inicializarHojaDashboard() {
 }
 
 /**
- * Webhook para recibir eventos en tiempo real desde BPMN Studio
+ * Webhook para recibir eventos en tiempo real desde BPMN Studio Miñoso
  */
 function doPost(e) {
   try {

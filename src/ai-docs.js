@@ -74,7 +74,7 @@ ${compuertas.length > 0
 4. **Nivel de Servicio (SLA):** Cumplimiento de metas de atención dentro de los 3 a 5 días hábiles establecidos por la DGII.
 
 ---
-*Documento generado automáticamente por BPMN Studio Pro con IA - Johan Tapia, PhD.*`;
+*Documento generado automáticamente por BPMN Studio Miñoso con IA - Johan Tapia, PhD.*`;
 
   return markdown;
 }

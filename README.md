@@ -1,4 +1,4 @@
-# BPMN Studio Pro 🚀
+# BPMN Studio Miñoso 🚀
 
 > **Estudio Web Profesional de Modelado, Auditoría y Automatización de Procesos BPMN 2.0 con Inteligencia Artificial y Casos Oficiales de la DGII de la República Dominicana.**
 
