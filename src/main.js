@@ -11,6 +11,11 @@ import {
 import { auditarDiagramaBPMN } from './ai-auditor.js';
 import { generarBPMNConIA } from './ai-generator.js';
 import { generarDocumentacionProceso } from './ai-docs.js';
+import { 
+  EXPEDIENTES_DGII_NELSON, 
+  generarAppsScriptCode, 
+  exportarDatosCSV 
+} from './dashboard.js';
 
 // Inicializar el modelador de BPMN
 const canvasElement = document.getElementById('canvas');
@@ -36,9 +41,20 @@ const btnZoomOut = document.getElementById('btn-zoom-out');
 const btnZoomFit = document.getElementById('btn-zoom-fit');
 const btnZoomReset = document.getElementById('btn-zoom-reset');
 
+const btnDashboard = document.getElementById('btn-dashboard');
 const btnAiGen = document.getElementById('btn-ai-gen');
 const btnAiAudit = document.getElementById('btn-ai-audit');
 const btnAiDoc = document.getElementById('btn-ai-doc');
+
+// Modales y drawers
+const modalDashboard = document.getElementById('modal-dashboard');
+const btnCloseDashboard = document.getElementById('btn-close-dashboard');
+const btnFooterCloseDashboard = document.getElementById('btn-footer-close-dashboard');
+const tableExpedientesBody = document.getElementById('table-expedientes-body');
+const appscriptCodeEl = document.getElementById('appscript-code');
+const btnCopyAppscript = document.getElementById('btn-copy-appscript');
+const btnExportCsv = document.getElementById('btn-export-csv');
+const btnSimulateCases = document.getElementById('btn-simulate-cases');
 
 const modalAiGen = document.getElementById('modal-ai-gen');
 const btnCloseAi = document.getElementById('btn-close-ai');
@@ -61,6 +77,8 @@ const dragOverlay = document.getElementById('drag-overlay');
 const statusElements = document.getElementById('status-elements');
 const statusText = document.getElementById('status-text');
 const toastContainer = document.getElementById('toast-container');
+
+let expedientesActuales = [...EXPEDIENTES_DGII_NELSON];
 
 /**
  * Función para importar XML en el lienzo
@@ -104,9 +122,7 @@ function actualizarEstado() {
     const total = elementRegistry.getAll().length;
     statusElements.textContent = `${total} elementos en lienzo`;
     statusText.textContent = 'Diagrama listo';
-  } catch (e) {
-    // Silencio si aún no inicializa
-  }
+  } catch (e) {}
 }
 
 // Cargar diagrama por defecto inicial
@@ -133,9 +149,7 @@ fileInput.addEventListener('change', (e) => {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = (event) => {
-    cargarDiagrama(event.target.result);
-  };
+  reader.onload = (event) => cargarDiagrama(event.target.result);
   reader.readAsText(file);
   fileInput.value = '';
 });
@@ -195,15 +209,11 @@ btnExportSvg.addEventListener('click', async () => {
 
 // Undo / Redo
 btnUndo.addEventListener('click', () => {
-  try {
-    modeler.get('commandStack').undo();
-  } catch (e) {}
+  try { modeler.get('commandStack').undo(); } catch (e) {}
 });
 
 btnRedo.addEventListener('click', () => {
-  try {
-    modeler.get('commandStack').redo();
-  } catch (e) {}
+  try { modeler.get('commandStack').redo(); } catch (e) {}
 });
 
 // Controles de Zoom
@@ -227,7 +237,7 @@ btnZoomReset.addEventListener('click', () => {
   canvas.zoom(1.0);
 });
 
-// Drag & Drop de archivos BPMN
+// Drag & Drop
 window.addEventListener('dragover', (e) => {
   e.preventDefault();
   dragOverlay.classList.add('active');
@@ -250,7 +260,106 @@ dragOverlay.addEventListener('drop', (e) => {
   }
 });
 
-// Modal Generador con IA
+// ========================================================
+// SISTEMA DE DASHBOARD EJECUTIVO (DGII & NELSON MIÑOSO)
+// ========================================================
+function renderizarTablaExpedientes() {
+  tableExpedientesBody.innerHTML = expedientesActuales.map(exp => `
+    <tr>
+      <td style="font-weight: 700; color: #1e3a8a;">${exp.id}</td>
+      <td><strong>${exp.tramite}</strong><br><small style="color: #64748b;">${exp.oficina}</small></td>
+      <td>${exp.contribuyente}</td>
+      <td><span class="kbd">${exp.rnc}</span></td>
+      <td>${exp.fechaIngreso}</td>
+      <td>
+        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; font-weight: 700; 
+          background: ${exp.estado === 'Emitido' ? '#dcfce7; color: #166534;' : (exp.estado === 'En Pruebas' ? '#dbeafe; color: #1e40af;' : '#fef3c7; color: #92400e;')}">
+          ${exp.estado}
+        </span>
+      </td>
+      <td><strong>${exp.leadTimeDias} d</strong></td>
+      <td><span style="color: #16a34a; font-weight: 700;">${exp.slaStatus}</span></td>
+    </tr>
+  `).join('');
+}
+
+btnDashboard.addEventListener('click', () => {
+  renderizarTablaExpedientes();
+  appscriptCodeEl.textContent = generarAppsScriptCode();
+  modalDashboard.classList.add('open');
+});
+
+btnCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
+btnFooterCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
+
+// Manejo de pestañas del dashboard
+document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+    btn.classList.add('active');
+    const tabId = btn.getAttribute('data-tab');
+    document.getElementById(tabId).classList.add('active');
+  });
+});
+
+// Exportar CSV
+btnExportCsv.addEventListener('click', () => {
+  exportarDatosCSV(expedientesActuales);
+  showToast('Archivo CSV generado y descargado', 'success');
+});
+
+// Copiar código Apps Script
+btnCopyAppscript.addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText(appscriptCodeEl.textContent);
+    showToast('Código de Google Apps Script copiado al portapapeles', 'success');
+  } catch (err) {
+    showToast('Error al copiar el código: ' + err.message, 'error');
+  }
+});
+
+// Simulación de casos
+btnSimulateCases.addEventListener('click', () => {
+  const tramites = [
+    "Certificación de Cumplimiento Tributario",
+    "Habilitación Emisor Electrónico (e-CF)",
+    "Rectificativa de Declaración IT-1",
+    "Levantamiento de Oposición de Vehículo",
+    "Solicitud de Exención Tributaria Ley 171-07"
+  ];
+  const estados = ["Emitido", "En Validación OFV", "En Pruebas", "Requerimiento Regularización"];
+
+  for (let i = 0; i < 5; i++) {
+    const randomId = "EXP-2026-" + Math.floor(1000 + Math.random() * 9000);
+    const tram = tramites[Math.floor(Math.random() * tramites.length)];
+    const est = estados[Math.floor(Math.random() * estados.length)];
+    const lt = (1.2 + Math.random() * 3.5).toFixed(1);
+    const tc = (0.8 + Math.random() * 2.0).toFixed(1);
+
+    expedientesActuales.unshift({
+      id: randomId,
+      tramite: tram,
+      contribuyente: "Nelson Miñoso",
+      rnc: "001-0892341-2",
+      fechaIngreso: "2026-09-25",
+      estado: est,
+      tiempoCicloDias: parseFloat(tc),
+      leadTimeDias: parseFloat(lt),
+      slaStatus: "En Tiempo (96%)",
+      oficina: "Administración Local / OFV",
+      actividadActual: "Gestión automatizada en curso"
+    });
+  }
+
+  renderizarTablaExpedientes();
+  showToast('⚡ Se han simulado y procesado nuevos expedientes para Nelson Miñoso', 'success');
+});
+
+// ========================================================
+// SUITE DE INTELIGENCIA ARTIFICIAL & AUDITORÍA
+// ========================================================
 btnAiGen.addEventListener('click', () => {
   modalAiGen.classList.add('open');
   aiPromptInput.focus();
@@ -259,7 +368,6 @@ btnAiGen.addEventListener('click', () => {
 btnCloseAi.addEventListener('click', () => modalAiGen.classList.remove('open'));
 btnCancelAi.addEventListener('click', () => modalAiGen.classList.remove('open'));
 
-// Chips de sugerencia rápida
 document.querySelectorAll('.prompt-chips .chip').forEach(chip => {
   chip.addEventListener('click', () => {
     aiPromptInput.value = chip.getAttribute('data-prompt');
