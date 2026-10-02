@@ -1,0 +1,252 @@
+[
+  {
+    "id": "bpmnAuth01",
+    "active": false,
+    "name": "BPMN Studio - Login y sesión",
+    "nodes": [
+      {
+        "id": "w1",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "bpmn-auth",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "bpmn-auth",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*"
+          }
+        }
+      },
+      {
+        "id": "p1",
+        "name": "Postgres",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          240,
+          0
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "mavHpWO7fIkviTqC",
+            "name": "Postgres INAP Progreso"
+          }
+        },
+        "alwaysOutputData": true,
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "WITH input AS (\n  SELECT $1::text AS usuario, $2::text AS clave, $3::text AS token, $4::text AS accion, $5::text AS nueva\n),\nexisting AS (\n  SELECT u.* FROM bpmn_usuarios u, input i WHERE i.accion = 'login' AND u.usuario = i.usuario\n),\nchecked AS (\n  SELECT e.*, (e.bloqueado_hasta IS NOT NULL AND e.bloqueado_hasta > now()) AS esta_bloqueado,\n         (e.clave_hash = crypt((SELECT clave FROM input), e.clave_hash)) AS clave_ok\n  FROM existing e\n),\nlogin_ok AS (\n  UPDATE bpmn_usuarios SET session_token = encode(gen_random_bytes(24),'hex'), token_creado_en = now(), intentos_fallidos = 0, bloqueado_hasta = NULL\n  WHERE id IN (SELECT id FROM checked WHERE clave_ok AND NOT esta_bloqueado AND activo)\n  RETURNING id, usuario, nombre, rol, session_token, debe_cambiar_clave\n),\nlogin_fail AS (\n  UPDATE bpmn_usuarios SET intentos_fallidos = intentos_fallidos + 1,\n    bloqueado_hasta = CASE WHEN intentos_fallidos + 1 >= 5 THEN now() + interval '15 minutes' ELSE bloqueado_hasta END\n  WHERE id IN (SELECT id FROM checked WHERE NOT clave_ok AND NOT esta_bloqueado)\n  RETURNING id\n),\nsesion AS (\n  SELECT u.id, u.usuario, u.nombre, u.rol, u.debe_cambiar_clave, u.clave_hash\n  FROM bpmn_usuarios u, input i\n  WHERE i.accion IN ('sesion','cambiar_clave') AND i.token <> '' AND u.session_token = i.token AND u.activo\n    AND u.token_creado_en > now() - interval '12 hours'\n),\ncambio AS (\n  UPDATE bpmn_usuarios SET clave_hash = crypt((SELECT nueva FROM input), gen_salt('bf')), debe_cambiar_clave = false\n  WHERE id IN (SELECT id FROM sesion WHERE (SELECT accion FROM input) = 'cambiar_clave'\n               AND length((SELECT nueva FROM input)) >= 8\n               AND clave_hash = crypt((SELECT clave FROM input), clave_hash))\n  RETURNING id\n),\nsalida AS (\n  UPDATE bpmn_usuarios SET session_token = NULL\n  WHERE (SELECT accion FROM input) = 'logout' AND (SELECT token FROM input) <> '' AND session_token = (SELECT token FROM input)\n  RETURNING id\n)\nSELECT 'ok'::text AS r, id, usuario, nombre, rol, session_token AS token, debe_cambiar_clave FROM login_ok\nUNION ALL SELECT 'clave_incorrecta', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM login_fail\nUNION ALL SELECT 'bloqueado', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM checked WHERE esta_bloqueado\nUNION ALL SELECT 'inactivo', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM checked WHERE NOT activo AND clave_ok AND NOT esta_bloqueado\nUNION ALL SELECT 'sesion', id, usuario, nombre, rol, NULL::text, debe_cambiar_clave FROM sesion WHERE (SELECT accion FROM input) = 'sesion'\nUNION ALL SELECT 'clave_cambiada', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM cambio\nUNION ALL SELECT 'clave_actual_incorrecta', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM sesion\n  WHERE (SELECT accion FROM input) = 'cambiar_clave' AND id NOT IN (SELECT id FROM cambio)\nUNION ALL SELECT 'logout', id, NULL::text, NULL::text, NULL::text, NULL::text, NULL::boolean FROM salida",
+          "options": {
+            "queryReplacement": "={{ [\n  (($json.body.usuario)||'').toString().toLowerCase().trim(),\n  (($json.body.clave)||'').toString(),\n  (($json.body.token)||'').toString(),\n  (($json.body.accion)||'').toString(),\n  (($json.body.nueva)||'').toString()\n] }}"
+          }
+        }
+      },
+      {
+        "id": "c1",
+        "name": "Resultado",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const filas = $input.all().map(i => i.json);\nconst accion = (($('Webhook').first().json.body || {}).accion || '').toString();\nconst tiene = r => filas.some(x => x.r === r);\nif (accion === 'login') {\n  if (tiene('bloqueado')) return [{ json: { ok: false, error: 'Demasiados intentos fallidos. Espera 15 minutos e intenta de nuevo.' } }];\n  if (tiene('inactivo')) return [{ json: { ok: false, error: 'Tu cuenta está desactivada. Contacta al administrador.' } }];\n  const ok = filas.find(x => x.r === 'ok');\n  if (ok) return [{ json: { ok: true, token: ok.token, usuario: ok.usuario, nombre: ok.nombre, rol: ok.rol, debe_cambiar_clave: ok.debe_cambiar_clave } }];\n  return [{ json: { ok: false, error: 'Usuario o clave incorrectos.' } }];\n}\nif (accion === 'sesion') {\n  const s = filas.find(x => x.r === 'sesion');\n  if (s) return [{ json: { ok: true, usuario: s.usuario, nombre: s.nombre, rol: s.rol, debe_cambiar_clave: s.debe_cambiar_clave } }];\n  return [{ json: { ok: false, error: 'sesion_invalida' } }];\n}\nif (accion === 'cambiar_clave') {\n  if (tiene('clave_cambiada')) return [{ json: { ok: true } }];\n  if (tiene('clave_actual_incorrecta')) return [{ json: { ok: false, error: 'La clave actual es incorrecta, o la nueva tiene menos de 8 caracteres.' } }];\n  return [{ json: { ok: false, error: 'sesion_invalida' } }];\n}\nif (accion === 'logout') return [{ json: { ok: true } }];\nreturn [{ json: { ok: false, error: 'accion_desconocida' } }];"
+        }
+      },
+      {
+        "id": "r1",
+        "name": "Responder",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          720,
+          0
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $json }}",
+          "options": {
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Postgres",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres": {
+        "main": [
+          [
+            {
+              "node": "Resultado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resultado": {
+        "main": [
+          [
+            {
+              "node": "Responder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  },
+  {
+    "id": "bpmnUsuarios01",
+    "active": false,
+    "name": "BPMN Studio - Administrar usuarios (admin)",
+    "nodes": [
+      {
+        "id": "w1",
+        "name": "Webhook",
+        "type": "n8n-nodes-base.webhook",
+        "typeVersion": 2,
+        "position": [
+          0,
+          0
+        ],
+        "webhookId": "bpmn-usuarios",
+        "parameters": {
+          "httpMethod": "POST",
+          "path": "bpmn-usuarios",
+          "responseMode": "responseNode",
+          "options": {
+            "allowedOrigins": "*"
+          }
+        }
+      },
+      {
+        "id": "p1",
+        "name": "Postgres",
+        "type": "n8n-nodes-base.postgres",
+        "typeVersion": 2.5,
+        "position": [
+          240,
+          0
+        ],
+        "credentials": {
+          "postgres": {
+            "id": "mavHpWO7fIkviTqC",
+            "name": "Postgres INAP Progreso"
+          }
+        },
+        "alwaysOutputData": true,
+        "parameters": {
+          "operation": "executeQuery",
+          "query": "WITH input AS (\n  SELECT $1::text AS token, $2::text AS accion, $3::text AS usuario, $4::text AS nombre, $5::text AS clave, $6::text AS activo, $7::int AS uid\n),\nadmin AS (\n  SELECT u.id FROM bpmn_usuarios u, input i\n  WHERE i.token <> '' AND u.session_token = i.token AND u.rol = 'admin' AND u.activo\n    AND u.token_creado_en > now() - interval '12 hours'\n),\ncrear AS (\n  INSERT INTO bpmn_usuarios (usuario, nombre, clave_hash, rol, debe_cambiar_clave)\n  SELECT i.usuario, i.nombre, crypt(i.clave, gen_salt('bf')), 'usuario', true FROM input i\n  WHERE i.accion = 'crear' AND EXISTS (SELECT 1 FROM admin)\n    AND i.usuario ~ '^[a-z0-9._-]{3,30}$' AND length(trim(i.nombre)) > 0 AND length(i.clave) >= 8\n  ON CONFLICT (usuario) DO NOTHING\n  RETURNING id\n),\nreset AS (\n  UPDATE bpmn_usuarios SET clave_hash = crypt((SELECT clave FROM input), gen_salt('bf')), debe_cambiar_clave = true,\n    session_token = NULL, intentos_fallidos = 0, bloqueado_hasta = NULL\n  WHERE id = (SELECT uid FROM input) AND (SELECT accion FROM input) = 'reset' AND EXISTS (SELECT 1 FROM admin)\n    AND length((SELECT clave FROM input)) >= 8\n  RETURNING id\n),\nestado AS (\n  UPDATE bpmn_usuarios SET activo = ((SELECT activo FROM input) = 'true'),\n    session_token = CASE WHEN (SELECT activo FROM input) = 'true' THEN session_token ELSE NULL END,\n    intentos_fallidos = 0, bloqueado_hasta = NULL\n  WHERE id = (SELECT uid FROM input) AND (SELECT accion FROM input) = 'estado' AND EXISTS (SELECT 1 FROM admin)\n    AND id NOT IN (SELECT id FROM admin)\n  RETURNING id\n),\neliminar AS (\n  DELETE FROM bpmn_usuarios\n  WHERE id = (SELECT uid FROM input) AND (SELECT accion FROM input) = 'eliminar' AND EXISTS (SELECT 1 FROM admin)\n    AND id NOT IN (SELECT id FROM admin) AND rol <> 'admin'\n  RETURNING id\n)\nSELECT (SELECT count(*) FROM admin)::int AS admin_ok,\n       (SELECT count(*) FROM crear)::int AS creado,\n       (SELECT count(*) FROM reset)::int AS reseteado,\n       (SELECT count(*) FROM estado)::int AS estado_ok,\n       (SELECT count(*) FROM eliminar)::int AS eliminado,\n       COALESCE((SELECT json_agg(json_build_object('id', u.id, 'usuario', u.usuario, 'nombre', u.nombre, 'rol', u.rol,\n                  'activo', u.activo, 'debe_cambiar_clave', u.debe_cambiar_clave, 'creado_en', u.creado_en,\n                  'bloqueado', (u.bloqueado_hasta IS NOT NULL AND u.bloqueado_hasta > now())) ORDER BY u.id)\n                 FROM bpmn_usuarios u WHERE (SELECT accion FROM input) = 'listar' AND EXISTS (SELECT 1 FROM admin)), '[]'::json) AS usuarios",
+          "options": {
+            "queryReplacement": "={{ [\n  (($json.body.token)||'').toString(),\n  (($json.body.accion)||'').toString(),\n  (($json.body.usuario)||'').toString().toLowerCase().trim(),\n  (($json.body.nombre)||'').toString().trim(),\n  (($json.body.clave)||'').toString(),\n  (($json.body.activo)||'').toString(),\n  String(parseInt($json.body.id) || 0)\n] }}"
+          }
+        }
+      },
+      {
+        "id": "c1",
+        "name": "Resultado",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [
+          480,
+          0
+        ],
+        "parameters": {
+          "jsCode": "const r = $input.first().json;\nconst b = $('Webhook').first().json.body || {};\nif (!r.admin_ok) return [{ json: { ok: false, error: 'no_autorizado' } }];\nswitch (b.accion) {\n  case 'listar': return [{ json: { ok: true, usuarios: r.usuarios } }];\n  case 'crear':\n    return [{ json: r.creado ? { ok: true } : { ok: false, error: 'No se pudo crear: el usuario ya existe, es inválido (3-30 letras minúsculas, números . _ -), el nombre está vacío o la clave tiene menos de 8 caracteres.' } }];\n  case 'reset':\n    return [{ json: r.reseteado ? { ok: true } : { ok: false, error: 'No se pudo cambiar la clave (mínimo 8 caracteres).' } }];\n  case 'estado':\n    return [{ json: r.estado_ok ? { ok: true } : { ok: false, error: 'No se puede cambiar el estado de esa cuenta.' } }];\n  case 'eliminar':\n    return [{ json: r.eliminado ? { ok: true } : { ok: false, error: 'No se puede eliminar esa cuenta.' } }];\n}\nreturn [{ json: { ok: false, error: 'accion_desconocida' } }];"
+        }
+      },
+      {
+        "id": "r1",
+        "name": "Responder",
+        "type": "n8n-nodes-base.respondToWebhook",
+        "typeVersion": 1.1,
+        "position": [
+          720,
+          0
+        ],
+        "parameters": {
+          "respondWith": "json",
+          "responseBody": "={{ $json }}",
+          "options": {
+            "responseHeaders": {
+              "entries": [
+                {
+                  "name": "Access-Control-Allow-Origin",
+                  "value": "*"
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "connections": {
+      "Webhook": {
+        "main": [
+          [
+            {
+              "node": "Postgres",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Postgres": {
+        "main": [
+          [
+            {
+              "node": "Resultado",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      },
+      "Resultado": {
+        "main": [
+          [
+            {
+              "node": "Responder",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  }
+]

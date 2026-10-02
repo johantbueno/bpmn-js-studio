@@ -9,6 +9,10 @@ import {
 } from './dgii-processes.js';
 
 import { auditarDiagramaBPMN } from './ai-auditor.js';
+import { auth } from './auth.js';
+import { exigirSesion, reabrirLogin } from './auth-ui.js';
+import { leerArchivo } from './lector-archivos.js';
+import { crearDictado } from './dictado.js';
 import { generarBPMNConIA } from './ai-generator.js';
 import { generarDocumentacionProceso } from './ai-docs.js';
 import { 
@@ -93,7 +97,9 @@ const btnCloseAi = document.getElementById('btn-close-ai');
 const btnCancelAi = document.getElementById('btn-cancel-ai');
 const btnSubmitAi = document.getElementById('btn-submit-ai');
 const aiPromptInput = document.getElementById('ai-prompt-input');
-const geminiApiKey = document.getElementById('gemini-api-key');
+const aiFileInput = document.getElementById('ai-file-input');
+const aiFileName = document.getElementById('ai-file-name');
+const btnAiMic = document.getElementById('btn-ai-mic');
 
 const btnAiAudit = document.getElementById('btn-ai-audit');
 const auditDrawer = document.getElementById('audit-drawer');
@@ -579,12 +585,15 @@ btnSubmitAi.addEventListener('click', async () => {
   btnSubmitAi.innerHTML = '<span>⏳ Generando diagrama...</span>';
 
   try {
-    const apiKey = geminiApiKey.value.trim() || null;
-    const xml = await generarBPMNConIA(prompt, apiKey);
+    const xml = await generarBPMNConIA(prompt, {
+      token: auth.token(),
+      onEstado: msg => { btnSubmitAi.innerHTML = '<span>⏳ ' + msg + '</span>'; }
+    });
     await cargarDiagrama(xml);
     modalAiGen.classList.remove('open');
     showToast('¡Diagrama generado con IA exitosamente!', 'success');
   } catch (err) {
+    if (err.code === 'no_autorizado') { modalAiGen.classList.remove('open'); reabrirLogin(err.message); return; }
     console.error('Error al generar con IA:', err);
     showToast('Error al generar diagrama: ' + err.message, 'error');
   } finally {
@@ -592,6 +601,31 @@ btnSubmitAi.addEventListener('click', async () => {
     btnSubmitAi.innerHTML = '<span>✨ Generar Diagrama</span>';
   }
 });
+
+aiFileInput.addEventListener('change', async () => {
+  const archivo = aiFileInput.files[0];
+  if (!archivo) return;
+  try {
+    const texto = await leerArchivo(archivo);
+    aiPromptInput.value = [aiPromptInput.value.trim(), texto].filter(Boolean).join('\n\n');
+    aiFileName.textContent = archivo.name;
+    showToast('Archivo cargado: ' + archivo.name, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  } finally {
+    aiFileInput.value = '';
+  }
+});
+
+const dictado = crearDictado({
+  onTexto: texto => { aiPromptInput.value = (aiPromptInput.value.trim() + ' ' + texto).trim(); },
+  onEstado: activo => {
+    btnAiMic.setAttribute('aria-pressed', String(activo));
+    btnAiMic.textContent = activo ? '⏹ Detener' : '🎤 Dictar';
+  },
+  onError: msg => showToast(msg, 'error')
+});
+btnAiMic.addEventListener('click', () => dictado.alternar());
 
 btnAiAudit.addEventListener('click', () => {
   const resultado = auditarDiagramaBPMN(modeler);
@@ -703,3 +737,7 @@ btnPrintDocs.addEventListener('click', () => {
   `);
   printWindow.document.close();
 });
+
+
+// Acceso: nada de la app es utilizable hasta iniciar sesión
+exigirSesion({ showToast });
