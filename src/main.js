@@ -15,17 +15,8 @@ import { leerArchivo } from './lector-archivos.js';
 import { crearDictado } from './dictado.js';
 import { generarBPMNConIA } from './ai-generator.js';
 import { generarDocumentacionProceso } from './ai-docs.js';
-import { 
-  EXPEDIENTES_DGII_NELSON, 
-  generarAppsScriptCode, 
-  exportarDatosCSV 
-} from './dashboard.js';
-
 import { ProcessSimulator } from './token-simulator.js';
-import { generarMatrizRACI, exportarRACICSV } from './raci-matrix.js';
-import { ISHIKAWA_CASO_DGII } from './ishikawa-five-whys.js';
-import { INICIATIVAS_MEJORA_DGII } from './impact-effort-matrix.js';
-
+import { iniciarPaneles } from './paneles-analisis.js';
 // Inicializar el modelador de BPMN
 const canvasElement = document.getElementById('canvas');
 const modeler = new BpmnModeler({
@@ -61,36 +52,6 @@ const btnSimStep = document.getElementById('btn-sim-step');
 const btnSimStop = document.getElementById('btn-sim-stop');
 const simLogText = document.getElementById('sim-log-text');
 
-const btnRaci = document.getElementById('btn-raci');
-const modalRaci = document.getElementById('modal-raci');
-const btnCloseRaci = document.getElementById('btn-close-raci');
-const btnCloseRaciBtn = document.getElementById('btn-close-raci-btn');
-const raciThead = document.getElementById('raci-thead');
-const raciTbody = document.getElementById('raci-tbody');
-const btnExportRaciCsv = document.getElementById('btn-export-raci-csv');
-
-const btnIshikawa = document.getElementById('btn-ishikawa');
-const modalIshikawa = document.getElementById('modal-ishikawa');
-const btnCloseIshikawa = document.getElementById('btn-close-ishikawa');
-const btnCloseIshikawaBtn = document.getElementById('btn-close-ishikawa-btn');
-const ishikawaCardsContainer = document.getElementById('ishikawa-cards-container');
-const whysContainer = document.getElementById('whys-container');
-
-const btnQuickwins = document.getElementById('btn-quickwins');
-const modalQuickwins = document.getElementById('modal-quickwins');
-const btnCloseQuickwins = document.getElementById('btn-close-quickwins');
-const btnCloseQuickwinsBtn = document.getElementById('btn-close-quickwins-btn');
-
-const btnDashboard = document.getElementById('btn-dashboard');
-const modalDashboard = document.getElementById('modal-dashboard');
-const btnCloseDashboard = document.getElementById('btn-close-dashboard');
-const btnFooterCloseDashboard = document.getElementById('btn-footer-close-dashboard');
-const tableExpedientesBody = document.getElementById('table-expedientes-body');
-const appscriptCodeEl = document.getElementById('appscript-code');
-const btnCopyAppscript = document.getElementById('btn-copy-appscript');
-const btnExportCsv = document.getElementById('btn-export-csv');
-const btnSimulateCases = document.getElementById('btn-simulate-cases');
-
 const btnAiGen = document.getElementById('btn-ai-gen');
 const modalAiGen = document.getElementById('modal-ai-gen');
 const btnCloseAi = document.getElementById('btn-close-ai');
@@ -118,8 +79,6 @@ const statusElements = document.getElementById('status-elements');
 const statusText = document.getElementById('status-text');
 const toastContainer = document.getElementById('toast-container');
 
-let expedientesActuales = [...EXPEDIENTES_DGII_NELSON];
-let raciDataCache = null;
 
 // Instancia de Simulador de Procesos
 const simulator = new ProcessSimulator(
@@ -355,209 +314,6 @@ btnSimStop.addEventListener('click', () => {
 });
 
 // ========================================================
-// 2. MATRIZ RACI AUTOMÁTICA
-// ========================================================
-btnRaci.addEventListener('click', () => {
-  raciDataCache = generarMatrizRACI(modeler);
-  renderizarMatrizRACI(raciDataCache);
-  modalRaci.classList.add('open');
-});
-
-btnCloseRaci.addEventListener('click', () => modalRaci.classList.remove('open'));
-btnCloseRaciBtn.addEventListener('click', () => modalRaci.classList.remove('open'));
-
-function renderizarMatrizRACI(data) {
-  raciThead.innerHTML = `
-    <tr>
-      <th>Actividad / Tarea del Proceso</th>
-      ${data.roles.map(r => `<th style="text-align: center;">${r.nombre}</th>`).join('')}
-    </tr>
-  `;
-
-  raciTbody.innerHTML = data.matriz.map(m => `
-    <tr>
-      <td><strong>${m.tarea}</strong></td>
-      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.solicitante.toLowerCase()}">${m.asignaciones.solicitante}</span></td>
-      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.analista.toLowerCase()}">${m.asignaciones.analista}</span></td>
-      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.owner.toLowerCase()}">${m.asignaciones.owner}</span></td>
-      <td style="text-align: center;"><span class="raci-badge raci-${m.asignaciones.ti.toLowerCase()}">${m.asignaciones.ti}</span></td>
-    </tr>
-  `).join('');
-}
-
-btnExportRaciCsv.addEventListener('click', () => {
-  if (raciDataCache) {
-    exportarRACICSV(raciDataCache);
-    showToast('Matriz RACI exportada en formato CSV', 'success');
-  }
-});
-
-// ========================================================
-// 3. CAUSA RAÍZ (ISHIKAWA & 5 PORQUÉS)
-// ========================================================
-btnIshikawa.addEventListener('click', () => {
-  renderizarIshikawa();
-  modalIshikawa.classList.add('open');
-});
-
-btnCloseIshikawa.addEventListener('click', () => modalIshikawa.classList.remove('open'));
-btnCloseIshikawaBtn.addEventListener('click', () => modalIshikawa.classList.remove('open'));
-
-function renderizarIshikawa() {
-  ishikawaCardsContainer.innerHTML = ISHIKAWA_CASO_DGII.categorias.map(cat => `
-    <div class="ishikawa-card">
-      <div class="ishikawa-card-title">
-        <span>${cat.icono}</span>
-        <span>${cat.nombre}</span>
-      </div>
-      <ul class="ishikawa-list">
-        ${cat.causas.map(c => `<li>${c}</li>`).join('')}
-      </ul>
-    </div>
-  `).join('');
-
-  whysContainer.innerHTML = ISHIKAWA_CASO_DGII.cincoPorques.map((why, idx) => `
-    <div class="why-row ${idx === 4 ? 'why-root' : ''}">
-      <span class="why-badge">Por qué #${why.nivel}</span>
-      <div class="why-content">
-        <div><strong>Pregunta:</strong> ${why.pregunta}</div>
-        <div style="color: #334155; margin-top: 2px;"><strong>Respuesta:</strong> ${why.respuesta}</div>
-      </div>
-    </div>
-  `).join('');
-}
-
-// ========================================================
-// 4. MATRIZ 2x2 IMPACTO VS ESFUERZO (QUICK WINS)
-// ========================================================
-btnQuickwins.addEventListener('click', () => {
-  renderizarQuickWins();
-  modalQuickwins.classList.add('open');
-});
-
-btnCloseQuickwins.addEventListener('click', () => modalQuickwins.classList.remove('open'));
-btnCloseQuickwinsBtn.addEventListener('click', () => modalQuickwins.classList.remove('open'));
-
-function renderizarQuickWins() {
-  const qwEl = document.getElementById('quad-qw-list');
-  const estEl = document.getElementById('quad-est-list');
-  const menorEl = document.getElementById('quad-menor-list');
-  const desEl = document.getElementById('quad-des-list');
-
-  qwEl.innerHTML = '';
-  estEl.innerHTML = '';
-  menorEl.innerHTML = '';
-  desEl.innerHTML = '';
-
-  INICIATIVAS_MEJORA_DGII.forEach(item => {
-    const card = `
-      <div class="iniciativa-card">
-        <div class="iniciativa-title">${item.titulo}</div>
-        <div style="color: #64748b; font-size: 0.72rem;">${item.descripcion}</div>
-      </div>
-    `;
-
-    if (item.cuadrante === 'quick-win') qwEl.innerHTML += card;
-    else if (item.cuadrante === 'estrategico') estEl.innerHTML += card;
-    else if (item.cuadrante === 'menor') menorEl.innerHTML += card;
-    else if (item.cuadrante === 'descartar') desEl.innerHTML += card;
-  });
-}
-
-// ========================================================
-// 5. DASHBOARD EJECUTIVO & GOOGLE APPS SCRIPT
-// ========================================================
-function renderizarTablaExpedientes() {
-  tableExpedientesBody.innerHTML = expedientesActuales.map(exp => `
-    <tr>
-      <td style="font-weight: 700; color: #1e3a8a;">${exp.id}</td>
-      <td><strong>${exp.tramite}</strong><br><small style="color: #64748b;">${exp.oficina}</small></td>
-      <td>${exp.contribuyente}</td>
-      <td><span class="kbd">${exp.rnc}</span></td>
-      <td>${exp.fechaIngreso}</td>
-      <td>
-        <span style="font-size: 0.72rem; padding: 2px 8px; border-radius: 9999px; font-weight: 700; 
-          background: ${exp.estado === 'Emitido' ? '#dcfce7; color: #166534;' : (exp.estado === 'En Pruebas' ? '#dbeafe; color: #1e40af;' : '#fef3c7; color: #92400e;')}">
-          ${exp.estado}
-        </span>
-      </td>
-      <td><strong>${exp.leadTimeDias} d</strong></td>
-      <td><span style="color: #16a34a; font-weight: 700;">${exp.slaStatus}</span></td>
-    </tr>
-  `).join('');
-}
-
-btnDashboard.addEventListener('click', () => {
-  renderizarTablaExpedientes();
-  appscriptCodeEl.textContent = generarAppsScriptCode();
-  modalDashboard.classList.add('open');
-});
-
-btnCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
-btnFooterCloseDashboard.addEventListener('click', () => modalDashboard.classList.remove('open'));
-
-document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.dashboard-tabs .tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-
-    btn.classList.add('active');
-    const tabId = btn.getAttribute('data-tab');
-    document.getElementById(tabId).classList.add('active');
-  });
-});
-
-btnExportCsv.addEventListener('click', () => {
-  exportarDatosCSV(expedientesActuales);
-  showToast('Archivo CSV generado y descargado', 'success');
-});
-
-btnCopyAppscript.addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText(appscriptCodeEl.textContent);
-    showToast('Código de Google Apps Script copiado al portapapeles', 'success');
-  } catch (err) {
-    showToast('Error al copiar el código: ' + err.message, 'error');
-  }
-});
-
-btnSimulateCases.addEventListener('click', () => {
-  const tramites = [
-    "Certificación de Cumplimiento Tributario",
-    "Habilitación Emisor Electrónico (e-CF)",
-    "Rectificativa de Declaración IT-1",
-    "Levantamiento de Oposición de Vehículo",
-    "Solicitud de Exención Tributaria Ley 171-07"
-  ];
-  const estados = ["Emitido", "En Validación OFV", "En Pruebas", "Requerimiento Regularización"];
-
-  for (let i = 0; i < 5; i++) {
-    const randomId = "EXP-2026-" + Math.floor(1000 + Math.random() * 9000);
-    const tram = tramites[Math.floor(Math.random() * tramites.length)];
-    const est = estados[Math.floor(Math.random() * estados.length)];
-    const lt = (1.2 + Math.random() * 3.5).toFixed(1);
-    const tc = (0.8 + Math.random() * 2.0).toFixed(1);
-
-    expedientesActuales.unshift({
-      id: randomId,
-      tramite: tram,
-      contribuyente: "Nelson Miñoso",
-      rnc: "001-0892341-2",
-      fechaIngreso: "2026-09-25",
-      estado: est,
-      tiempoCicloDias: parseFloat(tc),
-      leadTimeDias: parseFloat(lt),
-      slaStatus: "En Tiempo (96%)",
-      oficina: "Administración Local / OFV",
-      actividadActual: "Gestión automatizada en curso"
-    });
-  }
-
-  renderizarTablaExpedientes();
-  showToast('⚡ Se han simulado y procesado nuevos expedientes para Nelson Miñoso', 'success');
-});
-
-// ========================================================
 // 6. SUITE DE IA & AUDITORÍA
 // ========================================================
 btnAiGen.addEventListener('click', () => {
@@ -738,6 +494,9 @@ btnPrintDocs.addEventListener('click', () => {
   printWindow.document.close();
 });
 
+
+// Paneles de análisis (RACI, Causa Raíz, Quick Wins, Dashboard) del proceso abierto
+iniciarPaneles({ modeler, showToast });
 
 // Acceso: nada de la app es utilizable hasta iniciar sesión
 exigirSesion({ showToast });

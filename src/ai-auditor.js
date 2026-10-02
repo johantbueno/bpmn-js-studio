@@ -166,7 +166,7 @@ export function auditarDiagramaBPMN(modeler) {
   recomendaciones.push({
     tipo: 'Quick Win (Unidad III)',
     titulo: 'Notificaciones Automáticas y Trazabilidad',
-    detalle: 'Incorpora tareas de servicio automatizadas para notificar al contribuyente (Nelson Miñoso) en los puntos de decisión o rechazo para reducir tiempos de espera muertos (Waiting waste).'
+    detalle: 'Incorpora tareas de servicio automatizadas para notificar al solicitante en los puntos de decisión o rechazo para reducir tiempos de espera muertos (Waiting waste).'
   });
 
   if (compuertas.length > 0) {

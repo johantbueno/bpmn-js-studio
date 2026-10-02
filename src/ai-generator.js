@@ -4,11 +4,9 @@
  * La IA devuelve un JSON de proceso; aquí se valida, se convierte a BPMN 2.0 y se diagrama.
  */
 import { layoutProcess } from 'bpmn-auto-layout';
+import { llamarIA } from './webhook-ia.js';
 import { validarProceso, procesoABpmnXml } from './proceso-json.js';
 
-const WEBHOOK_URL = import.meta.env?.VITE_BPMN_WEBHOOK
-  || 'https://n8n-inap.167.88.36.13.sslip.io/webhook/bpmn-generar-proceso';
-const TIMEOUT_MS = 150000;
 
 export async function generarBPMNConIA(texto, { fetchFn = globalThis.fetch, onEstado = () => {}, token = '' } = {}) {
   const limpio = texto.trim();
@@ -37,23 +35,8 @@ export async function generarBPMNConIA(texto, { fetchFn = globalThis.fetch, onEs
 }
 
 async function pedirProceso(texto, fetchFn, token) {
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), TIMEOUT_MS);
-  try {
-    const resp = await fetchFn(WEBHOOK_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ texto, token }),
-      signal: ctrl.signal
-    });
-    if (!resp.ok) throw new Error(`Servidor de IA respondió ${resp.status}`);
-    const datos = await resp.json();
-    if (datos.error === 'no_autorizado') throw Object.assign(new Error('Tu sesión venció. Vuelve a iniciar sesión.'), { code: 'no_autorizado' });
-    if (!datos.ok) throw new Error(`La IA no pudo generar el proceso (${datos.error || 'sin detalle'})`);
-    return datos.proceso;
-  } finally {
-    clearTimeout(timer);
-  }
+  const datos = await llamarIA({ texto, token }, fetchFn);
+  return datos.proceso;
 }
 
 /** Respaldo sin IA: un paso por línea/numeración/conector, flujo lineal. Sin límite de pasos ni recortes. */

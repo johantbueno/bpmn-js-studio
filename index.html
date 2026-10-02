@@ -204,142 +204,60 @@
       </div>
     </footer>
 
-    <!-- MODAL 1: Dashboard de Control y Métricas DGII -->
+    <!-- MODAL 1: Dashboard del proceso abierto -->
     <div id="modal-dashboard" class="modal-backdrop">
       <div class="modal-box modal-xl">
         <div class="modal-header">
           <div style="display: flex; align-items: center; gap: 10px;">
             <div class="dashboard-badge-icon">📊</div>
             <div>
-              <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">Dashboard Ejecutivo de Procesos DGII</div>
-              <div style="font-size: 0.74rem; color: var(--text-muted);">Seguimiento de Trámites, Cumplimiento de SLA y Casos del Contribuyente Nelson Miñoso</div>
+              <div style="font-weight: 800; font-size: 1.15rem; color: #0f172a;">Dashboard del Proceso</div>
+              <div id="dash-subtitulo" style="font-size: 0.74rem; color: var(--text-muted);"></div>
             </div>
           </div>
           <button class="btn-close" id="btn-close-dashboard">&times;</button>
         </div>
 
         <div class="dashboard-tabs">
-          <button class="tab-btn active" data-tab="tab-kpis">📈 Vista Ejecutiva (KPIs & Métricas)</button>
-          <button class="tab-btn" data-tab="tab-expedientes">📋 Expedientes (Nelson Miñoso)</button>
-          <button class="tab-btn" data-tab="tab-appscript">⚡ Conector Google Apps Script</button>
+          <button class="tab-btn active" data-tab="tab-kpis">📈 Vista Ejecutiva</button>
+          <button class="tab-btn" data-tab="tab-tareas">📋 Detalle de tareas</button>
+          <button class="tab-btn" data-tab="tab-appscript">⚡ Google Sheets</button>
         </div>
 
         <div class="modal-body" style="padding: 16px 22px;">
-          <!-- Pestaña 1: Vista Ejecutiva -->
           <div id="tab-kpis" class="tab-content active">
-            <div class="kpi-grid">
-              <div class="kpi-card">
-                <div class="kpi-title">Lead Time Promedio</div>
-                <div class="kpi-value positive">2.8 Días</div>
-                <div class="kpi-sub">Meta: ≤ 5.0 d | <span class="badge-success">-44% vs Meta</span></div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-title">Tiempo de Ciclo Activo</div>
-                <div class="kpi-value">1.4 Días</div>
-                <div class="kpi-sub">Tiempo neto con valor agregado</div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-title">Cumplimiento de SLA</div>
-                <div class="kpi-value positive">96.2%</div>
-                <div class="kpi-sub">Meta: ≥ 90% | <span class="badge-success">Excelente</span></div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-title">Tasa de Retrabajo / Observación</div>
-                <div class="kpi-value warning">6.5%</div>
-                <div class="kpi-sub">Meta: ≤ 8% | <span class="badge-info">En control</span></div>
-              </div>
-              <div class="kpi-card">
-                <div class="kpi-title">Trámites Nelson Miñoso</div>
-                <div class="kpi-value highlight">28 Casos</div>
-                <div class="kpi-sub">22 Emitidos · 4 En Revisión · 2 Obs.</div>
-              </div>
-            </div>
-
+            <div class="kpi-grid" id="dash-kpis"></div>
             <div class="analytics-grid">
               <div class="chart-box">
-                <div class="chart-header">
-                  <span class="chart-title">Distribución de Trámites por Estado</span>
-                  <button id="btn-simulate-cases" class="btn btn-sm" title="Simular 20 nuevos expedientes">⚡ Simular +20 Casos</button>
-                </div>
-                <div class="status-bars-container">
-                  <div class="status-bar-row">
-                    <span class="bar-label">Emitido / Concluido (78%)</span>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width: 78%;"></div></div>
-                    <span class="bar-val">22</span>
-                  </div>
-                  <div class="status-bar-row">
-                    <span class="bar-label">En Validación OFV (14%)</span>
-                    <div class="bar-track"><div class="bar-fill bar-blue" style="width: 14%;"></div></div>
-                    <span class="bar-val">4</span>
-                  </div>
-                  <div class="status-bar-row">
-                    <span class="bar-label">Requerimiento Regularización (8%)</span>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width: 8%;"></div></div>
-                    <span class="bar-val">2</span>
-                  </div>
-                </div>
+                <div class="chart-header"><span class="chart-title">Carga de trabajo por rol (tareas)</span></div>
+                <div class="status-bars-container" id="dash-roles"></div>
               </div>
-
               <div class="chart-box">
-                <div class="chart-header">
-                  <span class="chart-title">Cuellos de Botella por Actividad (Horas Promedio)</span>
-                </div>
-                <div class="status-bars-container">
-                  <div class="status-bar-row">
-                    <span class="bar-label">Cruces 606/607 (Auditoría)</span>
-                    <div class="bar-track"><div class="bar-fill bar-red" style="width: 85%;"></div></div>
-                    <span class="bar-val">18.4h</span>
-                  </div>
-                  <div class="status-bar-row">
-                    <span class="bar-label">Validación RNC y Omisiones</span>
-                    <div class="bar-track"><div class="bar-fill bar-blue" style="width: 35%;"></div></div>
-                    <span class="bar-val">7.2h</span>
-                  </div>
-                  <div class="status-bar-row">
-                    <span class="bar-label">Set de Pruebas API e-CF</span>
-                    <div class="bar-track"><div class="bar-fill bar-amber" style="width: 55%;"></div></div>
-                    <span class="bar-val">12.1h</span>
-                  </div>
-                  <div class="status-bar-row">
-                    <span class="bar-label">Generación de Certificación QR</span>
-                    <div class="bar-track"><div class="bar-fill bar-green" style="width: 15%;"></div></div>
-                    <span class="bar-val">1.2h</span>
-                  </div>
-                </div>
+                <div class="chart-header"><span class="chart-title">Composición del proceso</span></div>
+                <div class="status-bars-container" id="dash-composicion"></div>
               </div>
             </div>
+            <h4 style="font-size: 0.88rem; margin: 18px 0 8px 0;">Hallazgos del diagrama</h4>
+            <div id="dash-hallazgos"></div>
           </div>
 
-          <!-- Pestaña 2: Tabla de Expedientes -->
-          <div id="tab-expedientes" class="tab-content">
+          <div id="tab-tareas" class="tab-content">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-              <span style="font-size: 0.86rem; color: var(--text-muted); font-weight: 600;">Expedientes Activos e Históricos de Nelson Miñoso en DGII:</span>
+              <span style="font-size: 0.86rem; color: var(--text-muted); font-weight: 600;">Tareas del proceso abierto:</span>
               <button id="btn-export-csv" class="btn btn-primary btn-sm">📥 Exportar a Excel / CSV</button>
             </div>
             <div class="table-responsive">
               <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>No. Expediente</th>
-                    <th>Trámite DGII</th>
-                    <th>Contribuyente</th>
-                    <th>RNC / Cédula</th>
-                    <th>Fecha</th>
-                    <th>Estado</th>
-                    <th>Lead Time</th>
-                    <th>SLA</th>
-                  </tr>
-                </thead>
-                <tbody id="table-expedientes-body"></tbody>
+                <thead><tr><th>ID</th><th>Tarea</th><th>Rol</th><th>Tipo</th><th>Salidas</th></tr></thead>
+                <tbody id="dash-tareas-body"></tbody>
               </table>
             </div>
           </div>
 
-          <!-- Pestaña 3: Conector Google Apps Script -->
           <div id="tab-appscript" class="tab-content">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; gap: 8px;">
               <p style="font-size: 0.84rem; color: var(--text-muted);">
-                Copia este script e insértalo en <strong>Google Sheets (Extensiones &gt; Apps Script)</strong> para alimentar un Dashboard en tiempo real.
+                Copia este script en <strong>Google Sheets (Extensiones &gt; Apps Script)</strong> para crear la hoja "Proceso" con los indicadores y tareas de este diagrama.
               </p>
               <button id="btn-copy-appscript" class="btn btn-primary btn-sm">📋 Copiar Apps Script</button>
             </div>
@@ -388,21 +306,27 @@
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 1.2rem;">🐟</span>
             <div>
-              <span style="font-weight: 800; font-size: 1.1rem;">Análisis de Causa Raíz (Ishikawa & 5 Porqués)</span>
-              <div style="font-size: 0.74rem; color: var(--text-muted);">Metodología DMAIC (Unidad III) para Diagnóstico en Trámites DGII</div>
+              <span style="font-weight: 800; font-size: 1.1rem;">Análisis de Causa Raíz (Ishikawa &amp; 5 Porqués)</span>
+              <div id="ish-subtitulo" style="font-size: 0.74rem; color: var(--text-muted);"></div>
             </div>
           </div>
           <button class="btn-close" id="btn-close-ishikawa">&times;</button>
         </div>
         <div class="modal-body" style="padding: 16px 20px;">
-          <div class="ishikawa-problem-banner">
-            <strong>Problema Focal:</strong> Demora en la tramitación y entrega de Certificaciones Tributarias a Nelson Miñoso
+          <div class="analisis-barra">
+            <div style="flex: 1; min-width: 220px;">
+              <label for="ish-problema" style="font-size: 0.8rem; font-weight: 600;">Problema focal (opcional; si lo dejas vacío la IA lo deduce del proceso)</label>
+              <input id="ish-problema" class="form-input" placeholder="Ej. Los expedientes tardan demasiado en aprobarse">
+            </div>
+            <button class="btn btn-primary" id="btn-ish-analizar">🔍 Analizar</button>
           </div>
+          <div id="ish-estado" class="analisis-estado" role="status"></div>
+          <div class="ishikawa-problem-banner" id="ish-problema-banner" hidden></div>
 
-          <h4 style="font-size: 0.88rem; margin: 14px 0 8px 0; color: #1e293b;">1. Las 6 Dimensiones de Ishikawa (Espina de Pescado):</h4>
+          <h4 style="font-size: 0.88rem; margin: 14px 0 8px 0; color: #1e293b;">1. Las 6 dimensiones de Ishikawa (espina de pescado):</h4>
           <div class="ishikawa-grid" id="ishikawa-cards-container"></div>
 
-          <h4 style="font-size: 0.88rem; margin: 20px 0 8px 0; color: #1e293b;">2. Técnica de los 5 Porqués (Desmontando Síntomas vs Causa Raíz):</h4>
+          <h4 style="font-size: 0.88rem; margin: 20px 0 8px 0; color: #1e293b;">2. Técnica de los 5 porqués (del síntoma a la causa raíz):</h4>
           <div class="whys-timeline" id="whys-container"></div>
         </div>
         <div class="modal-footer">
@@ -419,12 +343,16 @@
             <span style="font-size: 1.2rem;">⚡</span>
             <div>
               <span style="font-weight: 800; font-size: 1.1rem;">Matriz de Priorización: Impacto vs. Esfuerzo</span>
-              <div style="font-size: 0.74rem; color: var(--text-muted);">Herramienta de la Unidad III para identificar Quick Wins en procesos DGII</div>
+              <div id="qw-subtitulo" style="font-size: 0.74rem; color: var(--text-muted);"></div>
             </div>
           </div>
           <button class="btn-close" id="btn-close-quickwins">&times;</button>
         </div>
         <div class="modal-body">
+          <div class="analisis-barra">
+            <div id="qw-estado" class="analisis-estado" role="status" style="flex: 1;"></div>
+            <button class="btn" id="btn-qw-reanalizar">🔄 Volver a analizar</button>
+          </div>
           <div class="matrix-2x2">
             <div class="matrix-quadrant quad-qw">
               <div class="quad-header">🟢 QUICK WINS (Alto Impacto / Bajo Esfuerzo)</div>

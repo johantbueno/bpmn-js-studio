@@ -1121,3 +1121,19 @@ body, html {
 .ai-file-name { font-size: 0.78rem; color: var(--text-muted); }
 .ai-hint { display: block; margin-top: 6px; color: var(--text-muted); }
 #btn-ai-mic[aria-pressed="true"] { background: #fee2e2; border-color: #fca5a5; color: #991b1b; }
+
+
+/* ===== Paneles de análisis del proceso ===== */
+.analisis-barra { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 8px; }
+.analisis-estado { font-size: 0.8rem; color: var(--text-muted); min-height: 1.3em; }
+.analisis-estado .fuente { font-weight: 700; padding: 1px 8px; border-radius: 999px; margin-right: 6px; }
+.fuente-ia { background: #ede9fe; color: #5b21b6; }
+.fuente-reglas { background: #e0f2fe; color: #075985; }
+.hallazgo { display: flex; gap: 10px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 6px; background: var(--surface); }
+.hallazgo-sev { flex: none; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; height: fit-content; }
+.sev-alta { background: #fee2e2; color: #991b1b; }
+.sev-media { background: #fef3c7; color: #92400e; }
+.sev-baja { background: #dbeafe; color: #1e40af; }
+.hallazgo-titulo { font-weight: 700; font-size: 0.84rem; }
+.hallazgo-detalle { font-size: 0.78rem; color: var(--text-muted); margin-top: 2px; }
+.sin-datos { color: var(--text-muted); font-size: 0.82rem; padding: 10px 0; }

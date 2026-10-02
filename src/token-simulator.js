@@ -31,7 +31,7 @@ export class ProcessSimulator {
     const startNode = startEvents[0];
     this.isRunning = true;
     this.currentNodeId = startNode.id;
-    this.log(`🚀 [SIMULADOR ACTIVADO] Iniciando nueva instancia de proceso para Nelson Miñoso en nodo: "${startNode.businessObject.name || startNode.id}"`);
+    this.log(`🚀 [SIMULADOR ACTIVADO] Iniciando nueva instancia del proceso en el nodo: "${startNode.businessObject.name || startNode.id}"`);
     this.resaltarElemento(startNode.id);
 
     this.programarSiguientePaso();

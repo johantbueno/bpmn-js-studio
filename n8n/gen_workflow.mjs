@@ -26,13 +26,39 @@ REGLAS OBLIGATORIAS:
 11. El nombre de toda compuerta de decisión es una pregunta cerrada entre signos de interrogación (ej. "¿Historial de pagos favorable?"). Una compuerta que solo une ramas puede llamarse "Unión de ramas".
 12. Todos los nombres de tarea empiezan con verbo en infinitivo (Aprobar, no Aprueba).`;
 
+const SYSTEM_QW = `Eres un consultor senior de mejora de procesos (BPM, Lean, Six Sigma) para instituciones públicas de República Dominicana.
+Recibes el JSON de un proceso REAL ya modelado (titulo, pasos con rol y tipo, metricas y hallazgos estructurales) y devuelves EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma exacta:
+{ "iniciativas": [ { "titulo": "acción concreta", "descripcion": "1 a 2 oraciones: qué hacer, en qué pasos y qué mejora", "impacto": "Alto" | "Bajo", "esfuerzo": "Alto" | "Bajo", "pasos": ["id de pasos relacionados"] } ] }
+REGLAS:
+1. Entre 6 y 10 iniciativas ESPECÍFICAS para este proceso; cita los pasos por su nombre. Nada genérico ni copiado de otros procesos.
+2. Basa las ideas en desperdicios Lean (esperas, traspasos, reprocesos, sobreprocesamiento, movimientos), automatización de tareas repetitivas, consolidación de aprobaciones, paralelización y claridad de responsables.
+3. "impacto" y "esfuerzo" solo pueden ser "Alto" o "Bajo". Distribuye las iniciativas en los cuatro cuadrantes cuando tenga sentido (quick wins = impacto Alto y esfuerzo Bajo).
+4. Sé crítico al estimar el esfuerzo: integraciones entre sistemas, firma digital con validez legal, portales nuevos, cambios de normativa o de estructura organizacional son esfuerzo "Alto". Como máximo la mitad de las iniciativas pueden ser impacto Alto con esfuerzo Bajo; incluye también iniciativas de impacto Bajo.
+5. Nunca cites ids internos de pasos (t1, g2, fin1…) en "titulo" ni "descripcion": usa los nombres de los pasos. Los ids solo van en el arreglo "pasos".
+6. No inventes sistemas, cifras ni áreas que no aparezcan en el JSON.`;
+
+const SYSTEM_CR = `Eres un consultor senior de mejora de procesos (BPM, Lean, Six Sigma) para instituciones públicas de República Dominicana.
+Recibes el JSON de un proceso REAL ya modelado (titulo, problema_focal opcional, pasos con rol y tipo, metricas y hallazgos estructurales) y devuelves EXCLUSIVAMENTE un objeto JSON válido, sin markdown, con esta forma exacta:
+{ "problema": "problema focal en una oración",
+  "categorias": [ { "nombre": "Personas", "causas": ["..."] }, { "nombre": "Procesos", "causas": ["..."] }, { "nombre": "Tecnología", "causas": ["..."] }, { "nombre": "Materiales / Datos", "causas": ["..."] }, { "nombre": "Medición", "causas": ["..."] }, { "nombre": "Entorno / Normativa", "causas": ["..."] } ],
+  "cincoPorques": [ { "nivel": 1, "pregunta": "...", "respuesta": "..." } ] }
+REGLAS:
+1. Si viene "problema_focal", úsalo tal cual; si no, deduce el problema más probable a partir de los hallazgos (cuellos de botella, traspasos, reprocesos).
+2. Exactamente las 6 categorías indicadas, con 1 a 3 causas cada una, específicas de ESTE proceso citando los pasos por su nombre. Si el diagrama no da evidencia para una categoría, escribe "Hipótesis a validar: ..." en lugar de inventar hechos.
+3. "cincoPorques": exactamente 5 objetos encadenados (la respuesta de uno origina la pregunta del siguiente), que parten del problema y terminan en una causa raíz accionable; el nivel 5 tiene la pregunta "¿Cuál es entonces la causa raíz?" y su respuesta empieza con "Causa raíz:".
+4. Nunca cites ids internos de pasos (t1, g2, fin1…): usa los nombres de los pasos.
+5. No inventes cifras, sistemas ni áreas que no aparezcan en el JSON.`;
+
 const armarPrompt = `const body = $('Webhook BPMN').first().json.body || {};
 const texto = (body.texto || '').toString().trim();
 if (!texto) throw new Error('texto_vacio');
-const system_prompt = ${JSON.stringify(SYSTEM)};
+const prompts = ${JSON.stringify({ generar: SYSTEM, quickwins: SYSTEM_QW, causaraiz: SYSTEM_CR })};
+const modo = prompts[body.modo] ? body.modo : 'generar';
+const system_prompt = prompts[modo];
+const titulo = modo === 'generar' ? 'Levantamiento del proceso:' : 'Datos del proceso (JSON):';
 return [{ json: {
   system_prompt,
-  prompt: ['Levantamiento del proceso:', '', texto.slice(0, 40000)].join(String.fromCharCode(10)),
+  prompt: [titulo, '', texto.slice(0, 40000)].join(String.fromCharCode(10)),
   temperature: 0.2,
   json_mode: true,
   ollama_model: 'qwen2.5:7b'
@@ -45,9 +71,13 @@ texto = texto.replace(/^\`\`\`json\s*/i, '').replace(/^\`\`\`\s*/, '').replace(/
 const ini = texto.indexOf('{'), fin = texto.lastIndexOf('}');
 if (ini > 0 && fin > ini) texto = texto.slice(ini, fin + 1);
 try {
-  const proceso = JSON.parse(texto);
-  if (!Array.isArray(proceso.pasos) || proceso.pasos.length === 0) throw new Error('sin_pasos');
-  return [{ json: { ok: true, proceso, proveedor_usado: r.proveedor_usado || '', modelo_usado: r.modelo_usado || '' } }];
+  const obj = JSON.parse(texto);
+  const modo = (($('Webhook BPMN').first().json.body || {}).modo) || 'generar';
+  if (modo === 'generar') {
+    if (!Array.isArray(obj.pasos) || obj.pasos.length === 0) throw new Error('sin_pasos');
+    return [{ json: { ok: true, proceso: obj, proveedor_usado: r.proveedor_usado || '', modelo_usado: r.modelo_usado || '' } }];
+  }
+  return [{ json: { ok: true, resultado: obj, proveedor_usado: r.proveedor_usado || '', modelo_usado: r.modelo_usado || '' } }];
 } catch (e) {
   return [{ json: { ok: false, error: 'json_invalido', detalle: String(e.message), proveedor_usado: r.proveedor_usado || '' } }];
 }`;
